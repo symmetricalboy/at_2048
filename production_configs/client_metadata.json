@@ -1,0 +1,14 @@
+{
+  "client_id": "https://2048.blue/client_metadata.json",
+  "client_uri": "https://2048.blue",
+  "redirect_uris": [
+    "https://2048.blue/oauth/callback"
+  ],
+  "dpop_bound_access_tokens": true,
+  "token_endpoint_auth_method": "none",
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "scope": "atproto transition:generic"
+}

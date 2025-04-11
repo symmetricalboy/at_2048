@@ -1,0 +1,9 @@
+2048.blue {
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+    handle /api/* {
+        reverse_proxy host.docker.internal:8081
+    }
+}

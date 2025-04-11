@@ -1,0 +1,4 @@
+/target
+.idea
+/app_2048/node_modules
+/testcerts

@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@plugin "daisyui";
+
+
+@theme theme {
+    --transition-postion: 'top, left';
+    --color-light-background-color: rgba(238, 228, 218, 0.5);
+    --color-light-board-background: #bbada0;
+    --color-light-grid-cell-0: rgba(238, 228, 218, 0.35);
+    --color-light-grid-cell-2: #eee4da;
+    --color-light-grid-cell-4: #eee1c9;
+    --color-light-grid-cell-8: #f3b27a;
+    --color-light-grid-cell-16: #f69664;
+    --color-light-grid-cell-32: #f77c5f;
+    --color-light-grid-cell-64: #f75f3b;
+    --color-light-grid-cell-128: #edd073;
+    --color-light-grid-cell-256: #edcc62;
+    --color-light-grid-cell-512: #edc950;
+    --color-light-grid-cell-1024: #edc53f;
+    --color-light-grid-cell-2048: #edc22e;
+    --color-light-grid-cell-text-2: #776e65;
+    --color-light-grid-cell-text-4: #776e65;
+    --color-light-grid-cell-text-8: #f9f6f2;
+    --color-light-grid-cell-text-16: #f9f6f2;
+    --color-light-grid-cell-text-32: #f9f6f2;
+    --color-light-grid-cell-text-64: #f9f6f2;
+    --color-light-grid-cell-text-128: #f9f6f2;
+    --color-light-grid-cell-text-256: #f9f6f2;
+    --color-light-grid-cell-text-512: #f9f6f2;
+    --color-light-grid-cell-text-1024: #f9f6f2;
+    --color-light-grid-cell-text-2048: #f9f6f2;
+    --color-light-score-addition: rgba(119, 110, 101, 0.9);
+
+    /* new tile spawn animation*/
+    --animate-spawn: spawn 0.5s ease-out;
+
+    @keyframes spawn {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* move animation */
+    --animate-moveup: moveup 2s ease-out;
+    @keyframes moveup {
+        0% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(-150px);
+            opacity: 0;
+        }
+    }
+
+    /*transition-property {*/
+    /*}*/
+
+}
+
+
+@plugin "daisyui/theme" {
+    themes: light --prefers light
+}
+
+@plugin "daisyui/theme" {
+    /*Same as light just needed for the eink colors*/
+    name: eink;
+    default: false; /* set as default */
+    prefersdark: false; /* set as default dark mode (prefers-color-scheme:dark) */
+    color-scheme: light; /* color of browser-provided UI */
+    --color-base-100: oklch(100% 0 0);
+    --color-base-200: oklch(98% 0 0);
+    --color-base-300: oklch(95% 0 0);
+    --color-base-content: oklch(21% 0.006 285.885);
+    --color-primary: oklch(45% 0.24 277.023);
+    --color-primary-content: oklch(93% 0.034 272.788);
+    --color-secondary: oklch(65% 0.241 354.308);
+    --color-secondary-content: oklch(94% 0.028 342.258);
+    --color-accent: oklch(77% 0.152 181.912);
+    --color-accent-content: oklch(38% 0.063 188.416);
+    --color-neutral: oklch(14% 0.005 285.823);
+    --color-neutral-content: oklch(92% 0.004 286.32);
+    --color-info: oklch(74% 0.16 232.661);
+    --color-info-content: oklch(29% 0.066 243.157);
+    --color-success: oklch(76% 0.177 163.223);
+    --color-success-content: oklch(37% 0.077 168.94);
+    --color-warning: oklch(82% 0.189 84.429);
+    --color-warning-content: oklch(41% 0.112 45.904);
+    --color-error: oklch(71% 0.194 13.428);
+    --color-error-content: oklch(27% 0.105 12.094);
+    --radius-selector: 0.5rem;
+    --radius-field: 0.25rem;
+    --radius-box: 0.5rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 1;
+    --noise: 0;
+}
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@custom-variant eink {
+    &:where([data-theme="eink"] *) {
+        @slot;
+    }
+}

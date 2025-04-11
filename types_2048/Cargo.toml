@@ -1,0 +1,12 @@
+[package]
+name = "types-2048"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+atrium-api.workspace = true
+serde.workspace = true
+
+
+[features]
+skip_serializing = []

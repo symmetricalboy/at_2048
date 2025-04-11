@@ -1,0 +1,48 @@
+LexiconDocs:
+  blue.2048.player:
+    details: "Player schemas for the user.Things like stats"
+    write-location: "player's repo (the user playings repo)"
+    # maybe split between profile and stats?
+    schemas:
+      blue.2048.player.profile:
+        key: self
+          - optional - current_game strong ref to blue.2048.game
+          - ref to blue.2048.player.stats
+          - solo play - Do not post to leaderboards
+          - default social to check. Followers, following, mutuals
+          - title? Like a chess title?  may be a later thing https://2048masters.com/accreditations/
+      blue.2048.player.stats:
+        key: self
+        fields:
+          - best score
+          - games played
+          - total score
+          - highest number block
+          - times 2048 has been found
+          - least moves for a 2048 found
+          - avg score
+          - median score
+          - [ Later ]
+          - times placed in a leaderboard?
+          - consecutive days played?
+          - Time stats  Looks like it's document.focus() with set interval
+          - Fastest 2048
+          - Total time playing
+          - total swipes
+          - direction counts (Can get this from when validating the game)
+  blue.2048.game:
+    details: "Schemas for games"
+    write-location: "player's repo (the user playings repo)"
+    schemas:
+      blue.2048.game.instance:
+        fields:
+          - no_more_moves
+          - completed?
+          - 2048s found
+          - key hash (the hash that the game has been signed
+  #Schemas for the 2048.blue account
+  blue.2048.leaderboard:
+    details: "Schemas for global consumption"
+    write-location: "2048.blue's repo for global consumption"
+  # Global stats same as stats maybe? or a global stats?
+

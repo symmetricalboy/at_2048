@@ -1,0 +1,43 @@
+{
+  "lexicon": 1,
+  "id": "blue.2048.verification.defs",
+  "description": "Reusable types for an at://2048 authority to prove that it has verified a record ",
+  "defs": {
+    "verificationRef": {
+      "type": "object",
+      "description": "Holds the signature for another record showing it has verified it to the best of it's ability and it should be trusted if the signatures match.",
+      "required": [
+        "keyRef",
+        "recordRef",
+        "subject",
+        "signature",
+        "createdAt"
+      ],
+      "properties": {
+        "keyRef": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The at://uri for the public did:key to verify the remote record. This also counts as the authority of the verification (example @2048.blue). As well as the type of verification by the collection name (blue.2048.key.game)."
+        },
+        "recordRef": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The at://uri for the record that is being verified."
+        },
+        "subject": {
+          "description": "DID of the subject the verification applies to.",
+          "type": "string",
+          "format": "did"
+        },
+        "signature": {
+          "type": "string",
+          "description": "The public verifiable signature of the record. Serialization of the records valued"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

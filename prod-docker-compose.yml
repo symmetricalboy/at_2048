@@ -1,0 +1,27 @@
+services:
+  caddy:
+    image: fatfingers23/at_2048_web_server:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - 2048-network
+  api:
+    image: fatfingers23/at_2048_api:latest
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    networks:
+      - 2048-network
+
+volumes:
+  caddy_data:
+  caddy_config:
+networks:
+  2048-network:
+    driver: bridge
