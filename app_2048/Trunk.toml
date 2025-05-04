@@ -1,8 +1,10 @@
 [build]
 target = "index.html"
 dist = "dist"
-filehash = true
-no_sri = true
+#public_url = "./"
+#filehash = true
+#no_sri = true
+
 
 [tools]
 tailwindcss = "4.1.3"
