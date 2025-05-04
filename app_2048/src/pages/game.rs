@@ -56,7 +56,7 @@ impl Reducible for State {
         match action {
             Action::Move(direction) => {
                 if !self.gamestate.allowed_moves.contains(&direction) {
-                    let mut message = "Invalid move".to_string();
+                    let mut message = "".to_string();
                     if self.gamestate.over {
                         message = "Game over".to_string();
                     }
@@ -499,6 +499,7 @@ pub fn board(game_props: &GameProps) -> Html {
     let state = use_reducer(|| game_props.state.clone());
     let (user_store, _) = use_store::<UserStore>();
     let move_delay: Rc<RefCell<Option<Timeout>>> = use_mut_ref(|| None);
+    let storage_action_not_running = use_state(|| true);
 
     let storage_task = use_oneshot_runner::<StorageTask>();
     let storage_agent = storage_task.clone();
@@ -534,24 +535,31 @@ pub fn board(game_props: &GameProps) -> Html {
         || ()
     });
 
-    //Syncs the completed game with your pds and saves it locally
-    if state.gamestate.over {
-        let state_clone = state.clone();
-        let history_string: String = (&state_clone.history.clone()).into();
-        let did = user_store.did.clone();
-        spawn_local(async move {
-            let request = StorageRequest::GameCompleted(history_string, did);
-            let result = storage_agent.run(request).await;
-            match result {
-                StorageResponse::Error(err) => {
-                    let message_sorry = "Sorry there was an error saving your game. This is still in alpha and has some bugs so please excuse us. If you are logged in with your AT Proto account may try relogging and refreshing this page without hitting new game. It will try to sync again. Sorry again and thanks for trying out at://2048!";
-                    alert(message_sorry);
-                    log::error!("Error saving game: {:?}", err.to_string());
+    let game_over_state = state.clone();
+    use_effect_with(state.gamestate.over, move |gameover| {
+        if *gameover {
+            storage_action_not_running.set(false);
+            let history_string: String = (&game_over_state.history.clone()).into();
+            let did = user_store.did.clone();
+            let storage_action_not_running_clone = storage_action_not_running.clone();
+            spawn_local(async move {
+                let request = StorageRequest::GameCompleted(history_string, did);
+                let result = storage_agent.run(request).await;
+                match result {
+                    StorageResponse::Error(err) => {
+                        storage_action_not_running_clone.set(true);
+                        let message_sorry = "Sorry there was an error saving your game. This is still in alpha and has some bugs so please excuse us. If you are logged in with your AT Proto account may try relogging and refreshing this page without hitting new game. It will try to sync again. Sorry again and thanks for trying out at://2048!";
+                        alert(message_sorry);
+                        log::error!("Error saving game: {:?}", err.to_string());
+                    }
+                    _ => {
+                        storage_action_not_running_clone.set(true);
+                    }
                 }
-                _ => {}
-            }
-        });
-    }
+            });
+        }
+    });
+    //Syncs the completed game with your pds and saves it locally
 
     // Setup keyboard event listener
     use_effect_with(state.clone(), {
@@ -568,12 +576,11 @@ pub fn board(game_props: &GameProps) -> Html {
                         _ => return,
                     };
                     let cloned_state = state.clone();
-                    *move_delay.borrow_mut() = Some(Timeout::new(50, {
-                        let limit_flips_timer = move_delay.clone();
+                    *move_delay.borrow_mut() = Some(Timeout::new(150, {
+                        let move_delay_timer = move_delay.clone();
                         move || {
-                            limit_flips_timer.borrow_mut().take();
+                            move_delay_timer.borrow_mut().take();
                             cloned_state.dispatch(Action::Move(direction));
-                            // cloned_state.dispatch(Action::RollbackCards(cloned_rollback_cards));
                         }
                     }));
                     // state.dispatch(Action::Move(direction));
@@ -660,7 +667,7 @@ pub fn board(game_props: &GameProps) -> Html {
                             }
                         };
 
-                        *move_delay.borrow_mut() = Some(Timeout::new(50, {
+                        *move_delay.borrow_mut() = Some(Timeout::new(150, {
                             let cloned_state = state.clone();
                             let move_delay = move_delay.clone();
                             move || {
@@ -717,7 +724,7 @@ pub fn board(game_props: &GameProps) -> Html {
             <div
                 ref={board_ref}
                 id="game-board"
-                class="flex-1 mx-auto md:p-4 p-4 w-90 md:w-1/2 lg:w-1/2 xl:w-100 bg-light-board-background shadow-2xl rounded-md md:mt-4 xs:mt-1 mt-2"
+                class="flex-1 mx-auto md:p-4 p-4 w-90 md:w-1/2 lg:w-1/2 xl:w-120 bg-light-board-background shadow-2xl rounded-md md:mt-4 xs:mt-1 mt-2"
             >
                 <div class="aspect-square p-2 flex flex-col  rounded-md w-full  relative ">
                     <div className="flex flex-col p-2 relative w-full h-full">

@@ -61,9 +61,9 @@ pub async fn oauth_client() -> OAuthClientType {
                     ]),
                 },
                 keys: None,
-                resolver,
                 state_store,
                 session_store,
+                resolver,
             };
             Arc::new(OAuthClient::new(config).expect("failed to create OAuth client"))
         }
@@ -84,9 +84,9 @@ pub async fn oauth_client() -> OAuthClientType {
             let config = OAuthClientConfig {
                 client_metadata,
                 keys: None,
-                resolver,
                 state_store,
                 session_store,
+                resolver,
             };
             Arc::new(OAuthClient::new(config).expect("failed to create OAuth client"))
         }

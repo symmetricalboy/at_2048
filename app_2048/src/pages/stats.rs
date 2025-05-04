@@ -43,7 +43,6 @@ pub fn bsky_button(props: &BSkyButtonProps) -> Html {
 
 #[function_component(StatsPage)]
 pub fn stats() -> Html {
-    log::info!("Callback rendered");
     let (user_store, _) = use_store::<UserStore>();
     let stats_state = use_state(|| None);
     let number_formatter = Formatter::new()
@@ -58,13 +57,20 @@ pub fn stats() -> Html {
             match user_store_clone.did.clone() {
                 None => {
                     let at_repo_sync = AtRepoSync::new_local_repo();
-                    match at_repo_sync.sync_stats().await {
-                        Ok(_) => match at_repo_sync.get_local_player_stats().await {
-                            Ok(stats) => stats_state.set(stats),
-                            _ => {}
-                        },
-                        Err(err) => {
-                            log::error!("Error syncing stats: {:?}", err.to_string());
+
+                    match at_repo_sync.get_local_player_stats().await.unwrap_or(None) {
+                        Some(stats) => stats_state.set(Some(stats)),
+                        _ => {
+                            //If there is not a local one create a new stats
+                            match at_repo_sync.create_a_new_player_stats().await {
+                                Ok(stats) => stats_state.set(Some(stats)),
+                                Err(err) => {
+                                    log::error!(
+                                        "Error creating a new local only stats: {:?}",
+                                        err.to_string()
+                                    );
+                                }
+                            }
                         }
                     }
                 }

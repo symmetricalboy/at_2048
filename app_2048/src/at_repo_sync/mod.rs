@@ -406,7 +406,7 @@ impl AtRepoSync
     ) -> Result<(), AtRepoSyncError> {
         //TODO probably not most efficient but call a sync before
         self.sync_stats().await?;
-
+        new_stats.sync_status.updated_at = Datetime::now();
         let string_data = serde_json::to_string(&new_stats).unwrap();
         let hash = const_xxh3(string_data.as_bytes());
         new_stats.sync_status.hash = format!("{:x}", hash);

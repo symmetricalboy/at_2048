@@ -76,11 +76,9 @@ pub fn callback() -> Html {
     html! {
         <div class="container mx-auto flex flex-col items-center md:mt-6 mt-4 min-h-screen p-4">
             if user_store.did.is_none() && error.as_ref().is_none() {
-                <div class="flex flex-col items-center justify-center h-screen bg-base-200">
-                    <div class="flex items-center justify-center">
-                        <span class="loading loading-spinner loading-lg" />
-                        <h1 class="ml-4 text-3xl font-bold">{ "Loading..." }</h1>
-                    </div>
+                <div class="flex items-center justify-center">
+                    <span class="loading loading-spinner loading-lg" />
+                    <h1 class="ml-4 text-3xl font-bold">{ "Loading..." }</h1>
                 </div>
             }
             if let Some(error) = error.as_ref() {

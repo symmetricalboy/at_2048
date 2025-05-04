@@ -55,19 +55,6 @@ pub async fn create_database() -> Result<Database, OpenDbError> {
                     db.create_object_store(STATE_STORE).build()?;
                     db.create_object_store(SESSIONS_STORE).build()?;
                 }
-                (prev, Some(2.0)) => {
-                    if prev == 1.0 {
-                        let tx = db
-                            .transaction(GAME_STORE)
-                            .with_mode(TransactionMode::Readwrite)
-                            .build()?;
-                        let store = tx.object_store(GAME_STORE)?;
-                        store
-                            .create_index("index_hash", KeyPath::from("index_hash"))
-                            .build()?;
-                        tx.commit().await?;
-                    }
-                }
                 _ => {}
             }
 
