@@ -2,7 +2,6 @@ use crate::agent::{StorageRequest, StorageResponse, StorageTask};
 use crate::idb::{
     CURRENT_GAME_STORE, DB_NAME, SELF_KEY, STATS_STORE, object_delete, object_get, transaction_put,
 };
-use crate::pages::stats::BSkyButtonProps;
 use crate::store::UserStore;
 use atrium_api::types::string::Datetime;
 use gloo::dialogs::alert;
@@ -458,31 +457,70 @@ pub fn scoreboard(props: &ScoreboardProps) -> Html {
     }
 }
 
-#[function_component(BSkyButton)]
-fn bsky_button(props: &BSkyButtonProps) -> Html {
-    let display_text = format!(
+#[derive(Properties, PartialEq, Clone)]
+struct ShareButtonProps {
+    score: usize,
+    seed: u32,
+}
+
+#[function_component(ShareGameButtons)]
+fn bsky_buttons(props: &ShareButtonProps) -> Html {
+    let mut number_formatter = Formatter::new()
+        .precision(Precision::Decimals(0))
+        .separator(',')
+        .expect("Could not build the number formatter.");
+    let score = number_formatter.fmt2(props.score).to_string();
+    let normal_share_display_text = format!(
         "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.",
-        props.text
+        score.clone()
     );
 
-    let redirect_url = format!(
-        "https://bsky.app/intent/compose?text={}",
-        encode_uri_component(&display_text)
+    let seed_redirect_url = format!("https://2048.blue/seed/{}", props.seed.to_string());
+
+    let seeded_share = format!(
+        "I just scored {} on a game of at://2048 with a starting seed of {}.\nThink you can do better with this exact same seed? Try it out here {} \n @2048.blue",
+        score.clone(),
+        props.seed.to_string(),
+        seed_redirect_url.clone()
     );
+
+    let compose_base = "https://bsky.app/intent/compose?text=";
+
+    let bsky_logo = html! {
+        <svg
+            class="inline-block w-8 fill-[#0a7aff]"
+            viewBox="0 0 1024 1024"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path
+                d="M351.121 315.106C416.241 363.994 486.281 463.123 512 516.315C537.719 463.123 607.759 363.994 672.879 315.106C719.866 279.83 796 252.536 796 339.388C796 356.734 786.055 485.101 780.222 505.943C759.947 578.396 686.067 596.876 620.347 585.691C735.222 605.242 764.444 670.002 701.333 734.762C581.473 857.754 529.061 703.903 515.631 664.481C513.169 657.254 512.017 653.873 512 656.748C511.983 653.873 510.831 657.254 508.369 664.481C494.939 703.903 442.527 857.754 322.667 734.762C259.556 670.002 288.778 605.242 403.653 585.691C337.933 596.876 264.053 578.396 243.778 505.943C237.945 485.101 228 356.734 228 339.388C228 252.536 304.134 279.83 351.121 315.106Z"
+            />
+        </svg>
+    };
+
     html!(
         <div class="flex justify-center">
-            <a class="btn btn-sm btn-accent" href={redirect_url}>
+            <a
+                class="btn btn-sm btn-accent"
+                href={format!(
+        "{}{}",
+        compose_base,
+        encode_uri_component(&seeded_share))}
+            >
+                { "Share with seed" }
+                { bsky_logo.clone() }
+            </a>
+            <a
+                class="btn btn-sm btn-accent ml-2"
+                href={format!(
+        "{}{}",
+        compose_base,
+        encode_uri_component(&normal_share_display_text)
+    )}
+            >
                 { "Share" }
-                <svg
-                    class="inline-block w-8 fill-[#0a7aff]"
-                    viewBox="0 0 1024 1024"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        d="M351.121 315.106C416.241 363.994 486.281 463.123 512 516.315C537.719 463.123 607.759 363.994 672.879 315.106C719.866 279.83 796 252.536 796 339.388C796 356.734 786.055 485.101 780.222 505.943C759.947 578.396 686.067 596.876 620.347 585.691C735.222 605.242 764.444 670.002 701.333 734.762C581.473 857.754 529.061 703.903 515.631 664.481C513.169 657.254 512.017 653.873 512 656.748C511.983 653.873 510.831 657.254 508.369 664.481C494.939 703.903 442.527 857.754 322.667 734.762C259.556 670.002 288.778 605.242 403.653 585.691C337.933 596.876 264.053 578.396 243.778 505.943C237.945 485.101 228 356.734 228 339.388C228 252.536 304.134 279.83 351.121 315.106Z"
-                    />
-                </svg>
+                { bsky_logo }
             </a>
         </div>
     )
@@ -504,10 +542,6 @@ pub fn board(game_props: &GameProps) -> Html {
     let storage_task = use_oneshot_runner::<StorageTask>();
     let storage_agent = storage_task.clone();
     let hiscore = use_state_eq(|| 0);
-    let mut number_formatter = Formatter::new()
-        .precision(Precision::Decimals(0))
-        .separator(',')
-        .expect("Could not build the number formatter.");
 
     //Gets the current hiscore and compares
     use_effect_with(hiscore.clone(), move |hiscore| {
@@ -718,7 +752,7 @@ pub fn board(game_props: &GameProps) -> Html {
                 action={score_board_callback.clone()}
             />
             if state.gamestate.over {
-                <BSkyButton text={number_formatter.fmt2(state.hiscore).to_string()} />
+                <ShareGameButtons score={state.hiscore} seed={state.history.seed} />
             }
             // Game board
             <div
