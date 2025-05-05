@@ -111,11 +111,13 @@ pub async fn handle_game_completed(
             .map_err(|err| StorageError::Error(err.to_string()))?;
     if let Some(already_saved) = already_saved {
         if already_saved.record.sync_status.synced_with_at_repo || !at_repo_sync.can_remote_sync() {
-            log::info!("already saved");
+            log::info!("already saved or cannot sync");
             return Ok(StorageResponse::AlreadySynced);
         } else {
             //TODO sync with remote repo idk what I want to do here yet
         }
+        log::info!("already saved");
+        return Ok(StorageResponse::AlreadySynced);
     }
 
     let gamestate = match GameState::from_reconstructable_ruleset(&seeded_recording) {

@@ -36,19 +36,10 @@ pub async fn oauth_client() -> OAuthClientType {
         authorization_server_metadata: Default::default(),
         protected_resource_metadata: Default::default(),
     };
-    let origin = match web_sys::window() {
-        None => "http://127.0.0.1:8080".to_string(),
-        Some(window) => match window.location().origin() {
-            Ok(origin) => {
-                if origin.contains("localhost") {
-                    "http://127.0.0.1:8080".to_string()
-                } else {
-                    origin
-                }
-            }
-            Err(_) => "http://127.0.0.1:8080".to_string(),
-        },
-    };
+
+    let origin = std::option_env!("APP_ORIGIN")
+        .unwrap_or("http://127.0.0.1:8080")
+        .to_string();
 
     match origin.contains("127.0.0.1") {
         true => {
