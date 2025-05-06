@@ -2,7 +2,6 @@ use crate::agent::{StorageRequest, StorageResponse, StorageTask};
 use crate::idb::{
     CURRENT_GAME_STORE, DB_NAME, SELF_KEY, STATS_STORE, object_delete, object_get, transaction_put,
 };
-use crate::pages::stats::BSkyButtonProps;
 use crate::store::UserStore;
 use atrium_api::types::string::Datetime;
 use gloo::dialogs::alert;
@@ -27,9 +26,11 @@ use yew::{
 use yew_agent::oneshot::use_oneshot_runner;
 use yew_hooks::use_effect_once;
 use yewdux::use_store;
+use urlencoding;
+use gloo_console::log as gloo_log;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct State {
+pub(crate) struct State {
     gamestate: GameState,
     history: SeededRecording,
     message: String,
@@ -458,23 +459,45 @@ pub fn scoreboard(props: &ScoreboardProps) -> Html {
     }
 }
 
+#[derive(Properties, PartialEq, Clone)]
+pub struct GameBSkyButtonProps {
+    pub seeded_recording_string: String,
+    pub score: String, // Keep score for the text part of the bsky post
+}
+
 #[function_component(BSkyButton)]
-fn bsky_button(props: &BSkyButtonProps) -> Html {
-    let display_text = format!(
-        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.",
-        props.text
+fn bsky_button(props: &GameBSkyButtonProps) -> Html {
+    // TODO: Make the base_url configurable, this should match the one in api_2048/src/share_routes.rs
+    let app_base_url = "https://2048.symm.app"; // Updated for local testing API
+    let encoded_seeded_recording = urlencoding::encode(&props.seeded_recording_string);
+    
+    // This is the URL that will have the OG tags and will be included in the post text
+    let og_page_url = format!(
+        "{}/share/game?seeded_recording={}",
+        app_base_url,
+        encoded_seeded_recording
     );
 
-    let redirect_url = format!(
-        "https://bsky.app/intent/compose?text={}",
-        encode_uri_component(&display_text)
+    // The text for the Bluesky post itself, now including the URL
+    let display_text_for_bsky_post = format!(
+        "I just scored {} on a game of at://2048!\nSee my final board here: {}",
+        props.score,
+        og_page_url // og_page_url is now defined
     );
+
+    // The URL we send to bsky.app for it to scrape for OG tags
+    let bsky_intent_url = format!(
+        "https://bsky.app/intent/compose?text={}&url={}",
+        encode_uri_component(&display_text_for_bsky_post),
+        encode_uri_component(&og_page_url) // Bluesky will fetch this URL for OG tags
+    );
+
     html!(
-        <div class="flex justify-center">
-            <a class="btn btn-sm btn-accent" href={redirect_url}>
-                { "Share" }
+        <div class="flex justify-center my-2">
+            <a class="btn btn-sm btn-accent" href={bsky_intent_url} target="_blank" rel="noopener noreferrer">
+                { "Share on Bluesky" }
                 <svg
-                    class="inline-block w-8 fill-[#0a7aff]"
+                    class="inline-block w-8 ml-2 fill-[#0a7aff]" // Added ml-2 for a little spacing
                     viewBox="0 0 1024 1024"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -490,8 +513,8 @@ fn bsky_button(props: &BSkyButtonProps) -> Html {
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct GameProps {
-    state: State,
-    action: Callback<ScoreBoardAction>,
+    pub state: State,
+    pub action: Callback<ScoreBoardAction>,
 }
 
 #[function_component(Board)]
@@ -499,19 +522,12 @@ pub fn board(game_props: &GameProps) -> Html {
     let state = use_reducer(|| game_props.state.clone());
     let (user_store, _) = use_store::<UserStore>();
     let move_delay: Rc<RefCell<Option<Timeout>>> = use_mut_ref(|| None);
-    let storage_action_not_running = use_state(|| true);
-
     let storage_task = use_oneshot_runner::<StorageTask>();
     let storage_agent = storage_task.clone();
-    let hiscore = use_state_eq(|| 0);
-    let mut number_formatter = Formatter::new()
-        .precision(Precision::Decimals(0))
-        .separator(',')
-        .expect("Could not build the number formatter.");
+    let hiscore_handle = use_state_eq(|| state.hiscore);
 
-    //Gets the current hiscore and compares
-    use_effect_with(hiscore.clone(), move |hiscore| {
-        let hiscore = hiscore.clone();
+    use_effect_with(hiscore_handle.clone(), move |h_handle| {
+        let current_hiscore_handle = h_handle.clone();
         spawn_local(async move {
             let db = match Database::open(DB_NAME).await {
                 Ok(db) => db,
@@ -522,48 +538,47 @@ pub fn board(game_props: &GameProps) -> Html {
             match object_get::<blue::_2048::player::stats::RecordData>(db, STATS_STORE, SELF_KEY)
                 .await
             {
-                Ok(stats) => match stats {
-                    Some(stats) => {
-                        hiscore.set(stats.highest_score.clone());
+                Ok(stats_opt) => match stats_opt {
+                    Some(stats_data) => {
+                        current_hiscore_handle.set(stats_data.highest_score as usize);
                     }
                     None => {}
                 },
                 Err(_) => {}
             }
         });
-
         || ()
     });
 
-    let game_over_state = state.clone();
+    let game_over_state_reducer = state.clone();
+    let user_store_for_effect = user_store.clone();
+    let storage_agent_for_effect = storage_agent.clone();
+
     use_effect_with(state.gamestate.over, move |gameover| {
         if *gameover {
-            storage_action_not_running.set(false);
-            let history_string: String = (&game_over_state.history.clone()).into();
-            let did = user_store.did.clone();
-            let storage_action_not_running_clone = storage_action_not_running.clone();
+            let history_string: String = (&(*game_over_state_reducer).history.clone()).into();
+            let did = user_store_for_effect.did.clone();
+            
             spawn_local(async move {
                 let request = StorageRequest::GameCompleted(history_string, did);
-                let result = storage_agent.run(request).await;
+                let result = storage_agent_for_effect.run(request).await;
                 match result {
                     StorageResponse::Error(err) => {
-                        storage_action_not_running_clone.set(true);
                         let message_sorry = "Sorry there was an error saving your game. This is still in alpha and has some bugs so please excuse us. If you are logged in with your AT Proto account may try relogging and refreshing this page without hitting new game. It will try to sync again. Sorry again and thanks for trying out at://2048!";
                         alert(message_sorry);
                         log::error!("Error saving game: {:?}", err.to_string());
                     }
                     _ => {
-                        storage_action_not_running_clone.set(true);
+                        log::info!("Game completion processed by storage agent.");
                     }
                 }
             });
         }
+        ||()
     });
-    //Syncs the completed game with your pds and saves it locally
 
-    // Setup keyboard event listener
     use_effect_with(state.clone(), {
-        let move_delay = move_delay.clone(); // Clone the Rc pointer for this closure
+        let move_delay = move_delay.clone();
         move |state| {
             let state = state.clone();
             let listener = EventListener::new(&gloo::utils::document(), "keydown", move |event| {
@@ -583,22 +598,18 @@ pub fn board(game_props: &GameProps) -> Html {
                             cloned_state.dispatch(Action::Move(direction));
                         }
                     }));
-                    // state.dispatch(Action::Move(direction));
                 }
             });
 
-            // Cleanup the listener on unmount
             move || drop(listener)
         }
     });
 
-    //Touches
     let board_ref = use_node_ref();
-    let touch_start = Rc::new(RefCell::new((0, 0))); // Use RefCell for mutable state
+    let touch_start = use_mut_ref(|| (0, 0));
 
     {
-        //Touch start
-        let touch_start = touch_start.clone(); // Clone Rc for touchstart event
+        let touch_start = touch_start.clone();
         use_effect_with(board_ref.clone(), move |board_ref| {
             let board = board_ref
                 .cast::<HtmlElement>()
@@ -610,7 +621,6 @@ pub fn board(game_props: &GameProps) -> Html {
                     if let Some(touch) = event.changed_touches().item(0) {
                         let x = touch.client_x();
                         let y = touch.client_y();
-                        // Update Rc<RefCell> state directly
                         *touch_start.borrow_mut() = (x, y);
                     }
                 }
@@ -626,8 +636,7 @@ pub fn board(game_props: &GameProps) -> Html {
     }
 
     {
-        //Touch end
-        let touch_start = touch_start.clone(); // Clone Rc for touchend event
+        let touch_start = touch_start.clone();
         let move_delay = move_delay.clone();
         let state = state.clone();
 
@@ -644,7 +653,6 @@ pub fn board(game_props: &GameProps) -> Html {
                         let touch_end_x = touch.client_x();
                         let touch_end_y = touch.client_y();
 
-                        // Read from Rc<RefCell> state directly
                         let (start_x, start_y) = *touch_start.borrow();
 
                         let delta_x = touch_end_x - start_x;
@@ -706,21 +714,25 @@ pub fn board(game_props: &GameProps) -> Html {
         Callback::from(move |board_action: ScoreBoardAction| match board_action {
             ScoreBoardAction::NewGame => {
                 action.emit(ScoreBoardAction::NewGame);
-                // cloned_state_for_callback.dispatch(Action::Move(Direction::RIGHT));
             }
         });
     html! {
         <div class="flex flex-col ">
             <ScoreBoard
                 current_score={state.gamestate.score_max}
-                hiscore={*hiscore as usize}
+                hiscore={*hiscore_handle as usize}
                 message={state.message.clone()}
                 action={score_board_callback.clone()}
             />
-            if state.gamestate.over {
-                <BSkyButton text={number_formatter.fmt2(state.hiscore).to_string()} />
+            {
+                if state.gamestate.over {
+                    let history_string: String = (&state.history).into();
+                    gloo_log!(format!("Game Over! Seeded Recording: {}", history_string));
+                    html! { <BSkyButton score={state.hiscore.to_string()} seeded_recording_string={history_string.clone()} /> }
+                } else {
+                    html! {}
+                }
             }
-            // Game board
             <div
                 ref={board_ref}
                 id="game-board"
@@ -728,12 +740,10 @@ pub fn board(game_props: &GameProps) -> Html {
             >
                 <div class="aspect-square p-2 flex flex-col  rounded-md w-full  relative ">
                     <div className="flex flex-col p-2 relative w-full h-full">
-                        //Place holder grids
                         { (0..total_tiles).map(|i| {
                                 html! { <Grid key={format!("grid-parent-{}", i)} position={i} size={width} /> }
                             }).collect::<Html>() }
                         { flatten_tiles.into_iter().map(|tile| {
-
                                 html! { <Tile key={tile.id} tile_value={tile.value} new_tile={tile.new} x={tile.x} y={tile.y} size={width} /> }
                             }).collect::<Html>() }
                     </div>

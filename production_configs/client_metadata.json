@@ -1,8 +1,8 @@
 {
-  "client_id": "https://2048.blue/client_metadata.json",
-  "client_uri": "https://2048.blue",
+  "client_id": "https://2048.symm.app/client_metadata.json",
+  "client_uri": "https://2048.symm.app",
   "redirect_uris": [
-    "https://2048.blue/oauth/callback"
+    "https://2048.symm.app/oauth/callback"
   ],
   "dpop_bound_access_tokens": true,
   "token_endpoint_auth_method": "none",

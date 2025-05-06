@@ -13,6 +13,8 @@ use serde::de::DeserializeOwned;
 use std::error::Error as StdError;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
+use wasm_bindgen_futures::spawn_local;
+use futures::channel::oneshot;
 
 #[derive(Debug)]
 pub enum AuthStoreError {
@@ -53,39 +55,99 @@ where
 {
     type Error = AuthStoreError;
     async fn get(&self, key: &K) -> Result<Option<V>, Self::Error> {
-        let did = key.as_ref().to_string();
-        let db = Database::open(DB_NAME).await.unwrap();
-        match object_get::<V>(db.clone(), SESSIONS_STORE, &*did).await {
-            Ok(Some(session)) => Ok(Some(session)),
-            Ok(None) => Err(AuthStoreError::NoSessionFound),
-            Err(e) => {
-                log::error!("Database error: {}", e.to_string());
-                Err(AuthStoreError::DatabaseError(e.to_string()))
+        let (tx, rx) = oneshot::channel();
+        let did_owned = key.as_ref().to_string();
+
+        spawn_local(async move {
+            let result = async {
+                let db = match Database::open(DB_NAME).await {
+                    Ok(db) => db,
+                    Err(e) => {
+                        return Err(AuthStoreError::DatabaseError(format!("DB open error: {:?}", e)));
+                    }
+                };
+                match object_get::<V>(db.clone(), SESSIONS_STORE, &did_owned).await {
+                    Ok(Some(session)) => Ok(Some(session)),
+                    Ok(None) => Err(AuthStoreError::NoSessionFound),
+                    Err(e) => Err(AuthStoreError::DatabaseError(format!("DB get error: {:?}", e))),
+                }
             }
-        }
+            .await;
+            if tx.send(result).is_err() {
+                log::error!("SessionStore: Failed to send 'get' result through oneshot channel");
+            }
+        });
+        rx.await.map_err(|_| AuthStoreError::DatabaseError("SessionStore: Oneshot channel canceled for 'get'".to_string()))?
     }
 
     async fn set(&self, key: K, value: V) -> Result<(), Self::Error> {
-        let did = key.as_ref().to_string();
-        let db = Database::open(DB_NAME).await.unwrap();
-        transaction_put(db.clone(), &value, SESSIONS_STORE, Some(did))
-            .await
-            .map_err(|e| AuthStoreError::DatabaseError(e.to_string()))
+        let (tx, rx) = oneshot::channel();
+        let did_owned = key.as_ref().to_string();
+
+        spawn_local(async move {
+            let result = async {
+                let db = match Database::open(DB_NAME).await {
+                    Ok(db) => db,
+                    Err(e) => {
+                        return Err(AuthStoreError::DatabaseError(format!("DB open error: {:?}", e)));
+                    }
+                };
+                transaction_put(db.clone(), &value, SESSIONS_STORE, Some(did_owned))
+                    .await
+                    .map_err(|e| AuthStoreError::DatabaseError(format!("DB set error: {:?}", e)))
+            }
+            .await;
+            if tx.send(result).is_err() {
+                log::error!("SessionStore: Failed to send 'set' result through oneshot channel");
+            }
+        });
+        rx.await.map_err(|_| AuthStoreError::DatabaseError("SessionStore: Oneshot channel canceled for 'set'".to_string()))?
     }
 
-    async fn del(&self, _key: &K) -> Result<(), Self::Error> {
-        let key = _key.as_ref().to_string();
-        let db = Database::open(DB_NAME).await.unwrap();
-        object_delete(db.clone(), SESSIONS_STORE, &*key)
-            .await
-            .map_err(|e| AuthStoreError::DatabaseError(e.to_string()))
+    async fn del(&self, key: &K) -> Result<(), Self::Error> {
+        let (tx, rx) = oneshot::channel();
+        let key_owned = key.as_ref().to_string();
+
+        spawn_local(async move {
+            let result = async {
+                let db = match Database::open(DB_NAME).await {
+                    Ok(db) => db,
+                    Err(e) => {
+                        return Err(AuthStoreError::DatabaseError(format!("DB open error: {:?}", e)));
+                    }
+                };
+                object_delete(db.clone(), SESSIONS_STORE, &key_owned)
+                    .await
+                    .map_err(|e| AuthStoreError::DatabaseError(format!("DB del error: {:?}", e)))
+            }
+            .await;
+            if tx.send(result).is_err() {
+                log::error!("SessionStore: Failed to send 'del' result through oneshot channel");
+            }
+        });
+        rx.await.map_err(|_| AuthStoreError::DatabaseError("SessionStore: Oneshot channel canceled for 'del'".to_string()))?
     }
 
     async fn clear(&self) -> Result<(), Self::Error> {
-        let db = Database::open(DB_NAME).await.unwrap();
-        clear_store(db.clone(), SESSIONS_STORE)
-            .await
-            .map_err(|e| AuthStoreError::DatabaseError(e.to_string()))
+        let (tx, rx) = oneshot::channel();
+        spawn_local(async move {
+            let result = async {
+                let db = match Database::open(DB_NAME).await {
+                    Ok(db) => db,
+                    Err(e) => {
+                        return Err(AuthStoreError::DatabaseError(format!("DB open error: {:?}", e)));
+                    }
+                };
+                clear_store(db.clone(), SESSIONS_STORE)
+                    .await
+                    .map_err(|e| AuthStoreError::DatabaseError(format!("DB clear error: {:?}", e)))
+            }
+            .await;
+            if tx.send(result).is_err() {
+                log::error!("SessionStore: Failed to send 'clear' result through oneshot channel");
+            }
+        });
+        rx.await.map_err(|_| AuthStoreError::DatabaseError("SessionStore: Oneshot channel canceled for 'clear'".to_string()))?
     }
 }
 
@@ -106,42 +168,98 @@ where
 {
     type Error = AuthStoreError;
     async fn get(&self, key: &K) -> Result<Option<V>, Self::Error> {
-        let key = key.as_ref().to_string();
-        let db = Database::open(DB_NAME).await.unwrap();
-        match object_get::<V>(db.clone(), STATE_STORE, &*key).await {
-            Ok(Some(session)) => Ok(Some(session)),
-            Ok(None) => Err(AuthStoreError::NoSessionFound),
-            Err(e) => {
-                log::error!("Database error: {}", e.to_string());
-                Err(AuthStoreError::DatabaseError(e.to_string()))
+        let (tx, rx) = oneshot::channel();
+        let key_owned = key.as_ref().to_string();
+
+        spawn_local(async move {
+            let result = async {
+                let db = match Database::open(DB_NAME).await {
+                    Ok(db) => db,
+                    Err(e) => {
+                        return Err(AuthStoreError::DatabaseError(format!("DB open error: {:?}", e)));
+                    }
+                };
+                match object_get::<V>(db.clone(), STATE_STORE, &key_owned).await {
+                    Ok(Some(session)) => Ok(Some(session)),
+                    Ok(None) => Err(AuthStoreError::NoSessionFound),
+                    Err(e) => Err(AuthStoreError::DatabaseError(format!("DB get error: {:?}", e))),
+                }
             }
-        }
+            .await;
+            if tx.send(result).is_err() {
+                log::error!("StateStore: Failed to send 'get' result through oneshot channel");
+            }
+        });
+        rx.await.map_err(|_| AuthStoreError::DatabaseError("StateStore: Oneshot channel canceled for 'get'".to_string()))?
     }
 
     async fn set(&self, key: K, value: V) -> Result<(), Self::Error> {
-        let did = key.as_ref().to_string();
-        let db = Database::open(DB_NAME).await.unwrap();
-        match transaction_put(db.clone(), &value, STATE_STORE, Some(did))
-            .await
-            .map_err(|e| AuthStoreError::DatabaseError(e.to_string()))
-        {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e),
-        }
+        let (tx, rx) = oneshot::channel();
+        let key_owned = key.as_ref().to_string();
+
+        spawn_local(async move {
+            let result = async {
+                let db = match Database::open(DB_NAME).await {
+                    Ok(db) => db,
+                    Err(e) => {
+                        return Err(AuthStoreError::DatabaseError(format!("DB open error: {:?}", e)));
+                    }
+                };
+                transaction_put(db.clone(), &value, STATE_STORE, Some(key_owned))
+                    .await
+                    .map_err(|e| AuthStoreError::DatabaseError(format!("DB set error: {:?}", e)))
+            }
+            .await;
+            if tx.send(result).is_err() {
+                log::error!("StateStore: Failed to send 'set' result through oneshot channel");
+            }
+        });
+        rx.await.map_err(|_| AuthStoreError::DatabaseError("StateStore: Oneshot channel canceled for 'set'".to_string()))?
     }
 
-    async fn del(&self, _key: &K) -> Result<(), Self::Error> {
-        let key = _key.as_ref().to_string();
-        let db = Database::open(DB_NAME).await.unwrap();
-        object_delete(db.clone(), STATE_STORE, &*key)
-            .await
-            .map_err(|e| AuthStoreError::DatabaseError(e.to_string()))
+    async fn del(&self, key: &K) -> Result<(), Self::Error> {
+        let (tx, rx) = oneshot::channel();
+        let key_owned = key.as_ref().to_string();
+
+        spawn_local(async move {
+            let result = async {
+                let db = match Database::open(DB_NAME).await {
+                    Ok(db) => db,
+                    Err(e) => {
+                        return Err(AuthStoreError::DatabaseError(format!("DB open error: {:?}", e)));
+                    }
+                };
+                object_delete(db.clone(), STATE_STORE, &key_owned)
+                    .await
+                    .map_err(|e| AuthStoreError::DatabaseError(format!("DB del error: {:?}", e)))
+            }
+            .await;
+            if tx.send(result).is_err() {
+                log::error!("StateStore: Failed to send 'del' result through oneshot channel");
+            }
+        });
+        rx.await.map_err(|_| AuthStoreError::DatabaseError("StateStore: Oneshot channel canceled for 'del'".to_string()))?
     }
 
     async fn clear(&self) -> Result<(), Self::Error> {
-        let db = Database::open(DB_NAME).await.unwrap();
-        clear_store(db.clone(), STATE_STORE)
-            .await
-            .map_err(|e| AuthStoreError::DatabaseError(e.to_string()))
+        let (tx, rx) = oneshot::channel();
+        spawn_local(async move {
+            let result = async {
+                let db = match Database::open(DB_NAME).await {
+                    Ok(db) => db,
+                    Err(e) => {
+                        return Err(AuthStoreError::DatabaseError(format!("DB open error: {:?}", e)));
+                    }
+                };
+                clear_store(db.clone(), STATE_STORE)
+                    .await
+                    .map_err(|e| AuthStoreError::DatabaseError(format!("DB clear error: {:?}", e)))
+            }
+            .await;
+            if tx.send(result).is_err() {
+                log::error!("StateStore: Failed to send 'clear' result through oneshot channel");
+            }
+        });
+        rx.await.map_err(|_| AuthStoreError::DatabaseError("StateStore: Oneshot channel canceled for 'clear'".to_string()))?
     }
 }

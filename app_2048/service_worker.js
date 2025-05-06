@@ -1,7 +1,7 @@
 const oldCacheName = 'at_2048_cache_v1'
 const currentCacheName = 'at_2048_cache_v0.1'
 const cacheAbleHosts = [
-    '2048.blue',
+    '2048.symm.app',
     // '127.0.0.1'
 ];
 

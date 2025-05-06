@@ -1,9 +1,9 @@
-2048.blue {
+2048.symm.app {
     handle {
         try_files {path} /index.html
         file_server
     }
     handle /api/* {
-        reverse_proxy host.docker.internal:8081
+        reverse_proxy RAILWAY_API_SERVICE_URL # Replace with your actual API service URL on Railway (e.g., api:8080 or similar)
     }
 }
