@@ -112,9 +112,8 @@ impl Reducible for State {
 
 impl State {
     pub fn new() -> Self {
-        // let random_seed = rand::random();
-        // let history = SeededRecording::empty(random_seed, 4, 4);
-        let history = String::from("::2:4:4:1827348045:LSsRATMaBRA3LwAqJSMfHxwPKCk4EBYTBQwqFREBLxgPPw8mCQIPABo3MiMJOR0sLCoCPQUDJAQpARgIFTM0FSM6NBISJSErKjwSGgEhGSQrEiwjKC02GwEGPykiPAs+Ii4qNRgHJBcALC4FISs4Jh4zLjc8KTMpAzovPAYGHj8ZKCQCMBk1HSgTMigiDAE6Ax4GCz8sAjcRLBsLCA41KDMGDjgAKwsPJw0TCRIDFjEMDRY4JRE5OSckPiQmJAQ0KiI2GSQYEDQxHhwcBRkTOS05Ci8WESQ9KiAnEBY3MAweBD4KFS4OAisbOjEDIjcJGTAuAjo0JDQIOQ03MRALCQkPHAIZIB4fJDIiGTAROhEAKyQzFhs5PCc0JQoRGi8JFjkoBwUIHDQCFi8EBAITEg0lMzUhJBU+PhYFNDEtLxUGLi4nGw0DCi4jLigYAx4wATMbOgsWFAYSDgYIKRYhCTo4ACwUABwLMB8pBC0hNSI3MAEhHT0UGAwnAgcpBQklFhQtCgMAHyoNHiIAKzMOGCIZDAsuID0fAysXNx87PhQAIRcdDTMBJAwTIS89LzwrFwkNMQYZBygLMAMc").parse::<SeededRecording>().unwrap();
+        let random_seed = rand::random();
+        let history = SeededRecording::empty(random_seed, 4, 4);
         let gamestate = GameState::from_reconstructable_ruleset(&history).unwrap();
         Self {
             gamestate,
@@ -459,7 +458,7 @@ pub fn scoreboard(props: &ScoreboardProps) -> Html {
     }
 }
 
-fn emoji_board(tile_values: Vec<usize>) -> String {
+fn _emoji_board(tile_values: Vec<usize>) -> String {
     let mut emoji_board = String::new();
     let mut column_count = 0;
     for tile_value in tile_values {
