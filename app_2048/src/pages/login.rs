@@ -24,36 +24,35 @@ pub fn login() -> Html {
             spawn_local(async move {
                 let client = oauth_client().await;
                 let oauth_client = client.clone();
-                spawn_local(async move {
-                    let url = oauth_client
-                        .authorize(
-                            handle.to_string().to_lowercase(),
-                            AuthorizeOptions {
-                                scopes: vec![
-                                    Scope::Known(KnownScope::Atproto),
-                                    Scope::Known(KnownScope::TransitionGeneric),
-                                ],
-                                ..Default::default()
-                            },
-                        )
-                        .await;
-                    match url {
-                        Ok(url) => {
-                            let window = gloo_utils::window();
-                            let result = window.location().set_href(&url);
-                            if let Err(err) = result {
-                                log::error!("login error: {:?}", err);
-                                error_callback_clone
-                                    .set(Some(String::from("Error redirecting to the login page")));
-                            }
-                        }
-                        Err(err) => {
-                            log::error!("login error: {}", err);
-                            let error_str = format!("login error: {}", err);
-                            error_callback_clone.set(Some(error_str));
+
+                let url = oauth_client
+                    .authorize(
+                        handle.to_string().to_lowercase(),
+                        AuthorizeOptions {
+                            scopes: vec![
+                                Scope::Known(KnownScope::Atproto),
+                                Scope::Known(KnownScope::TransitionGeneric),
+                            ],
+                            ..Default::default()
+                        },
+                    )
+                    .await;
+                match url {
+                    Ok(url) => {
+                        let window = gloo_utils::window();
+                        let result = window.location().set_href(&url);
+                        if let Err(err) = result {
+                            log::error!("login error: {:?}", err);
+                            error_callback_clone
+                                .set(Some(String::from("Error redirecting to the login page")));
                         }
                     }
-                });
+                    Err(err) => {
+                        log::error!("login error: {}", err);
+                        let error_str = format!("login error: {}", err);
+                        error_callback_clone.set(Some(error_str));
+                    }
+                }
             });
         }
     };

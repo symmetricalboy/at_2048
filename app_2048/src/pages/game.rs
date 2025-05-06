@@ -319,10 +319,10 @@ fn get_bg_color_and_text_color<'a>(tile_size: usize) -> &'a str {
 fn get_font_size(text: &str) -> String {
     let font_size = match text.len() {
         1 => "text-[4rem] md:text-[4rem]",
-        2 => "text-[3.2rem] md:text-[3.7rem] lg:text-[4rem]",
-        3 => "text-[2.5rem] lg:text-[4rem]",
+        2 => "text-[3.2rem] md:text-[4rem] lg:text-[4rem]",
+        3 => "text-[2.5rem] md:text-[4rem] lg:text-[4rem]",
         //If over 4 just keep to same size
-        4 | _ => "text-[1.5rem] lg:text-[4rem]",
+        4 | _ => "text-[1.5rem] md:text-[3.6rem] lg:text-[3.4rem]",
     };
     font_size.to_string()
 }
@@ -453,12 +453,13 @@ pub fn scoreboard(props: &ScoreboardProps) -> Html {
                 </div>
             </div>
             <div class="text-center md:mt-4 mt-2">
-                <p>{ message }</p>
+                <h2 class="text-lg">{ message }</h2>
             </div>
         </>
     }
 }
 
+<<<<<<< HEAD
 #[derive(Properties, PartialEq, Clone)]
 pub struct GameBSkyButtonProps {
     pub seeded_recording_string: String,
@@ -506,6 +507,97 @@ fn bsky_button(props: &GameBSkyButtonProps) -> Html {
                         d="M351.121 315.106C416.241 363.994 486.281 463.123 512 516.315C537.719 463.123 607.759 363.994 672.879 315.106C719.866 279.83 796 252.536 796 339.388C796 356.734 786.055 485.101 780.222 505.943C759.947 578.396 686.067 596.876 620.347 585.691C735.222 605.242 764.444 670.002 701.333 734.762C581.473 857.754 529.061 703.903 515.631 664.481C513.169 657.254 512.017 653.873 512 656.748C511.983 653.873 510.831 657.254 508.369 664.481C494.939 703.903 442.527 857.754 322.667 734.762C259.556 670.002 288.778 605.242 403.653 585.691C337.933 596.876 264.053 578.396 243.778 505.943C237.945 485.101 228 356.734 228 339.388C228 252.536 304.134 279.83 351.121 315.106Z"
                     />
                 </svg>
+=======
+fn _emoji_board(tile_values: Vec<usize>) -> String {
+    let mut emoji_board = String::new();
+    let mut column_count = 0;
+    for tile_value in tile_values {
+        let emoji = match tile_value {
+            2 | 4 => '⬜',
+            8 => '🟧',
+            16 => '🟫',
+            32 | 64 => '🟥',
+            128 | 256 | 1024 => '🟨',
+            2048 => '⭐',
+            _ => '🤯',
+        };
+        emoji_board.push(emoji);
+        if column_count == 3 {
+            emoji_board.push_str("\n");
+            column_count = 0;
+        } else {
+            column_count += 1;
+        }
+    }
+    emoji_board
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct ShareButtonProps {
+    score: usize,
+    seed: u32,
+    // emoji_board: String,
+}
+
+#[function_component(ShareGameButtons)]
+fn bsky_buttons(props: &ShareButtonProps) -> Html {
+    let mut number_formatter = Formatter::new()
+        .precision(Precision::Decimals(0))
+        .separator(',')
+        .expect("Could not build the number formatter.");
+    let score = number_formatter.fmt2(props.score).to_string();
+    let normal_share_display_text = format!(
+        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.\n\nhttps://2048.blue",
+        score.clone()
+    );
+
+    let seed_redirect_url = format!("https://2048.blue/seed/{}", props.seed.to_string());
+
+    let seeded_share = format!(
+        "I just scored {} on a game of at://2048 with a starting seed of {}.\nThink you can do better with this exact same seed? Try it out here {} \n @2048.blue",
+        score.clone(),
+        props.seed.to_string(),
+        seed_redirect_url.clone()
+    );
+
+    let compose_base = "https://bsky.app/intent/compose?text=";
+
+    let bsky_logo = html! {
+        <svg
+            class="inline-block w-8 fill-[#0a7aff]"
+            viewBox="0 0 1024 1024"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path
+                d="M351.121 315.106C416.241 363.994 486.281 463.123 512 516.315C537.719 463.123 607.759 363.994 672.879 315.106C719.866 279.83 796 252.536 796 339.388C796 356.734 786.055 485.101 780.222 505.943C759.947 578.396 686.067 596.876 620.347 585.691C735.222 605.242 764.444 670.002 701.333 734.762C581.473 857.754 529.061 703.903 515.631 664.481C513.169 657.254 512.017 653.873 512 656.748C511.983 653.873 510.831 657.254 508.369 664.481C494.939 703.903 442.527 857.754 322.667 734.762C259.556 670.002 288.778 605.242 403.653 585.691C337.933 596.876 264.053 578.396 243.778 505.943C237.945 485.101 228 356.734 228 339.388C228 252.536 304.134 279.83 351.121 315.106Z"
+            />
+        </svg>
+    };
+
+    html!(
+        <div class="flex justify-center">
+            <a
+                class="btn btn-sm btn-accent"
+                href={format!(
+        "{}{}",
+        compose_base,
+        encode_uri_component(&seeded_share))}
+            >
+                { "Share with seed" }
+                { bsky_logo.clone() }
+            </a>
+            <a
+                class="btn btn-sm btn-accent ml-2"
+                href={format!(
+        "{}{}",
+        compose_base,
+        encode_uri_component(&normal_share_display_text)
+    )}
+            >
+                { "Share" }
+                { bsky_logo }
+>>>>>>> 6d92491b2f23cfb652b42c526914962c283b8119
             </a>
         </div>
     )
@@ -524,7 +616,11 @@ pub fn board(game_props: &GameProps) -> Html {
     let move_delay: Rc<RefCell<Option<Timeout>>> = use_mut_ref(|| None);
     let storage_task = use_oneshot_runner::<StorageTask>();
     let storage_agent = storage_task.clone();
+<<<<<<< HEAD
     let hiscore_handle = use_state_eq(|| state.hiscore);
+=======
+    let hiscore = use_state_eq(|| 0);
+>>>>>>> 6d92491b2f23cfb652b42c526914962c283b8119
 
     use_effect_with(hiscore_handle.clone(), move |h_handle| {
         let current_hiscore_handle = h_handle.clone();
@@ -724,6 +820,7 @@ pub fn board(game_props: &GameProps) -> Html {
                 message={state.message.clone()}
                 action={score_board_callback.clone()}
             />
+<<<<<<< HEAD
             {
                 if state.gamestate.over {
                     let history_string: String = (&state.history).into();
@@ -732,13 +829,18 @@ pub fn board(game_props: &GameProps) -> Html {
                 } else {
                     html! {}
                 }
+=======
+            if state.gamestate.over {
+                // <ShareGameButtons score={state.hiscore} seed={state.history.seed} emoji_board={emoji_board(flatten_tiles.iter().map(|tile| tile.value).collect::<Vec<_>>())}/>
+                <ShareGameButtons score={state.hiscore} seed={state.history.seed}/>
+>>>>>>> 6d92491b2f23cfb652b42c526914962c283b8119
             }
             <div
                 ref={board_ref}
                 id="game-board"
-                class="flex-1 mx-auto md:p-4 p-4 w-90 md:w-1/2 lg:w-1/2 xl:w-120 bg-light-board-background shadow-2xl rounded-md md:mt-4 xs:mt-1 mt-2"
+                class="flex-1 mx-auto md:p-4 p-4 w-90 md:w-3/4 lg:w-1/2 xl:w-140 bg-light-board-background shadow-2xl rounded-md md:mt-4 xs:mt-1 mt-2"
             >
-                <div class="aspect-square p-2 flex flex-col  rounded-md w-full  relative ">
+                <div class="aspect-square p-2 flex flex-col rounded-md w-full  relative ">
                     <div className="flex flex-col p-2 relative w-full h-full">
                         { (0..total_tiles).map(|i| {
                                 html! { <Grid key={format!("grid-parent-{}", i)} position={i} size={width} /> }
