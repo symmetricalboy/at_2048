@@ -320,7 +320,6 @@ fn get_font_size(text: &str) -> String {
         2 => "text-[3.2rem] md:text-[4rem] lg:text-[4rem]",
         3 => "text-[2.5rem] md:text-[4rem] lg:text-[4rem]",
         //If over 4 just keep to same size
-        //TODO should be smaller
         4 | _ => "text-[1.5rem] md:text-[3.6rem] lg:text-[3.4rem]",
     };
     font_size.to_string()
@@ -497,7 +496,7 @@ fn bsky_buttons(props: &ShareButtonProps) -> Html {
         .expect("Could not build the number formatter.");
     let score = number_formatter.fmt2(props.score).to_string();
     let normal_share_display_text = format!(
-        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.",
+        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.\n\nhttps://2048.blue",
         score.clone()
     );
 
