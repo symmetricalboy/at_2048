@@ -4,6 +4,6 @@
         file_server
     }
     handle /api/* {
-        reverse_proxy RAILWAY_API_SERVICE_URL # Replace with your actual API service URL on Railway (e.g., api:8080 or similar)
+        reverse_proxy at_2048.railway.internal
     }
 }

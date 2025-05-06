@@ -459,55 +459,6 @@ pub fn scoreboard(props: &ScoreboardProps) -> Html {
     }
 }
 
-<<<<<<< HEAD
-#[derive(Properties, PartialEq, Clone)]
-pub struct GameBSkyButtonProps {
-    pub seeded_recording_string: String,
-    pub score: String, // Keep score for the text part of the bsky post
-}
-
-#[function_component(BSkyButton)]
-fn bsky_button(props: &GameBSkyButtonProps) -> Html {
-    // TODO: Make the base_url configurable, this should match the one in api_2048/src/share_routes.rs
-    let app_base_url = "https://2048.symm.app"; // Updated for local testing API
-    let encoded_seeded_recording = urlencoding::encode(&props.seeded_recording_string);
-    
-    // This is the URL that will have the OG tags and will be included in the post text
-    let og_page_url = format!(
-        "{}/share/game?seeded_recording={}",
-        app_base_url,
-        encoded_seeded_recording
-    );
-
-    // The text for the Bluesky post itself, now including the URL
-    let display_text_for_bsky_post = format!(
-        "I just scored {} on a game of at://2048!\nSee my final board here: {}",
-        props.score,
-        og_page_url // og_page_url is now defined
-    );
-
-    // The URL we send to bsky.app for it to scrape for OG tags
-    let bsky_intent_url = format!(
-        "https://bsky.app/intent/compose?text={}&url={}",
-        encode_uri_component(&display_text_for_bsky_post),
-        encode_uri_component(&og_page_url) // Bluesky will fetch this URL for OG tags
-    );
-
-    html!(
-        <div class="flex justify-center my-2">
-            <a class="btn btn-sm btn-accent" href={bsky_intent_url} target="_blank" rel="noopener noreferrer">
-                { "Share on Bluesky" }
-                <svg
-                    class="inline-block w-8 ml-2 fill-[#0a7aff]" // Added ml-2 for a little spacing
-                    viewBox="0 0 1024 1024"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        d="M351.121 315.106C416.241 363.994 486.281 463.123 512 516.315C537.719 463.123 607.759 363.994 672.879 315.106C719.866 279.83 796 252.536 796 339.388C796 356.734 786.055 485.101 780.222 505.943C759.947 578.396 686.067 596.876 620.347 585.691C735.222 605.242 764.444 670.002 701.333 734.762C581.473 857.754 529.061 703.903 515.631 664.481C513.169 657.254 512.017 653.873 512 656.748C511.983 653.873 510.831 657.254 508.369 664.481C494.939 703.903 442.527 857.754 322.667 734.762C259.556 670.002 288.778 605.242 403.653 585.691C337.933 596.876 264.053 578.396 243.778 505.943C237.945 485.101 228 356.734 228 339.388C228 252.536 304.134 279.83 351.121 315.106Z"
-                    />
-                </svg>
-=======
 fn _emoji_board(tile_values: Vec<usize>) -> String {
     let mut emoji_board = String::new();
     let mut column_count = 0;
@@ -541,17 +492,21 @@ struct ShareButtonProps {
 
 #[function_component(ShareGameButtons)]
 fn bsky_buttons(props: &ShareButtonProps) -> Html {
+    let app_domain = "2048.symm.app"; // Use the new domain
+
     let mut number_formatter = Formatter::new()
         .precision(Precision::Decimals(0))
         .separator(',')
         .expect("Could not build the number formatter.");
     let score = number_formatter.fmt2(props.score).to_string();
+    
     let normal_share_display_text = format!(
-        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.\n\nhttps://2048.blue",
-        score.clone()
+        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.\n\nhttps://{}",
+        score.clone(),
+        app_domain // Use the new domain here
     );
 
-    let seed_redirect_url = format!("https://2048.blue/seed/{}", props.seed.to_string());
+    let seed_redirect_url = format!("https://{}/seed/{}", app_domain, props.seed.to_string()); // Use the new domain here
 
     let seeded_share = format!(
         "I just scored {} on a game of at://2048 with a starting seed of {}.\nThink you can do better with this exact same seed? Try it out here {} \n @2048.blue",
@@ -562,7 +517,7 @@ fn bsky_buttons(props: &ShareButtonProps) -> Html {
 
     let compose_base = "https://bsky.app/intent/compose?text=";
 
-    let bsky_logo = html! {
+    let bsky_logo_svg = html! {
         <svg
             class="inline-block w-8 fill-[#0a7aff]"
             viewBox="0 0 1024 1024"
@@ -576,28 +531,29 @@ fn bsky_buttons(props: &ShareButtonProps) -> Html {
     };
 
     html!(
-        <div class="flex justify-center">
+        <div class="flex justify-center my-2">
             <a
                 class="btn btn-sm btn-accent"
                 href={format!(
-        "{}{}",
-        compose_base,
-        encode_uri_component(&seeded_share))}
+                    "{}{}",
+                    compose_base,
+                    encode_uri_component(&seeded_share))}
+                target="_blank" rel="noopener noreferrer"
             >
                 { "Share with seed" }
-                { bsky_logo.clone() }
+                { bsky_logo_svg.clone() }
             </a>
             <a
                 class="btn btn-sm btn-accent ml-2"
                 href={format!(
-        "{}{}",
-        compose_base,
-        encode_uri_component(&normal_share_display_text)
-    )}
+                    "{}{}",
+                    compose_base,
+                    encode_uri_component(&normal_share_display_text)
+                )}
+                target="_blank" rel="noopener noreferrer"
             >
                 { "Share" }
-                { bsky_logo }
->>>>>>> 6d92491b2f23cfb652b42c526914962c283b8119
+                { bsky_logo_svg }
             </a>
         </div>
     )
@@ -616,11 +572,7 @@ pub fn board(game_props: &GameProps) -> Html {
     let move_delay: Rc<RefCell<Option<Timeout>>> = use_mut_ref(|| None);
     let storage_task = use_oneshot_runner::<StorageTask>();
     let storage_agent = storage_task.clone();
-<<<<<<< HEAD
     let hiscore_handle = use_state_eq(|| state.hiscore);
-=======
-    let hiscore = use_state_eq(|| 0);
->>>>>>> 6d92491b2f23cfb652b42c526914962c283b8119
 
     use_effect_with(hiscore_handle.clone(), move |h_handle| {
         let current_hiscore_handle = h_handle.clone();
@@ -820,20 +772,12 @@ pub fn board(game_props: &GameProps) -> Html {
                 message={state.message.clone()}
                 action={score_board_callback.clone()}
             />
-<<<<<<< HEAD
             {
                 if state.gamestate.over {
-                    let history_string: String = (&state.history).into();
-                    gloo_log!(format!("Game Over! Seeded Recording: {}", history_string));
-                    html! { <BSkyButton score={state.hiscore.to_string()} seeded_recording_string={history_string.clone()} /> }
+                    html! { <ShareGameButtons score={state.hiscore} seed={state.history.seed}/> }
                 } else {
                     html! {}
                 }
-=======
-            if state.gamestate.over {
-                // <ShareGameButtons score={state.hiscore} seed={state.history.seed} emoji_board={emoji_board(flatten_tiles.iter().map(|tile| tile.value).collect::<Vec<_>>())}/>
-                <ShareGameButtons score={state.hiscore} seed={state.history.seed}/>
->>>>>>> 6d92491b2f23cfb652b42c526914962c283b8119
             }
             <div
                 ref={board_ref}
