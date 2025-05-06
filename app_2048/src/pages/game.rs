@@ -317,10 +317,11 @@ fn get_bg_color_and_text_color<'a>(tile_size: usize) -> &'a str {
 fn get_font_size(text: &str) -> String {
     let font_size = match text.len() {
         1 => "text-[4rem] md:text-[4rem]",
-        2 => "text-[3.2rem] md:text-[3.7rem] lg:text-[4rem]",
-        3 => "text-[2.5rem] lg:text-[4rem]",
+        2 => "text-[3.2rem] md:text-[4rem] lg:text-[4rem]",
+        3 => "text-[2.5rem] md:text-[4rem] lg:text-[4rem]",
         //If over 4 just keep to same size
-        4 | _ => "text-[1.5rem] lg:text-[4rem]",
+        //TODO should be smaller
+        4 | _ => "text-[1.5rem] md:text-[3.6rem] lg:text-[3.4rem]",
     };
     font_size.to_string()
 }
@@ -457,10 +458,35 @@ pub fn scoreboard(props: &ScoreboardProps) -> Html {
     }
 }
 
+fn emoji_board(tile_values: Vec<usize>) -> String {
+    let mut emoji_board = String::new();
+    let mut column_count = 0;
+    for tile_value in tile_values {
+        let emoji = match tile_value {
+            2 | 4 => '⬜',
+            8 => '🟧',
+            16 => '🟫',
+            32 | 64 => '🟥',
+            128 | 256 | 1024 => '🟨',
+            2048 => '⭐',
+            _ => '🤯',
+        };
+        emoji_board.push(emoji);
+        if column_count == 3 {
+            emoji_board.push_str("\n");
+            column_count = 0;
+        } else {
+            column_count += 1;
+        }
+    }
+    emoji_board
+}
+
 #[derive(Properties, PartialEq, Clone)]
 struct ShareButtonProps {
     score: usize,
     seed: u32,
+    emoji_board: String,
 }
 
 #[function_component(ShareGameButtons)]
@@ -471,8 +497,9 @@ fn bsky_buttons(props: &ShareButtonProps) -> Html {
         .expect("Could not build the number formatter.");
     let score = number_formatter.fmt2(props.score).to_string();
     let normal_share_display_text = format!(
-        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.",
-        score.clone()
+        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.\n\n{}",
+        score.clone(),
+        { props.emoji_board.clone() }
     );
 
     let seed_redirect_url = format!("https://2048.blue/seed/{}", props.seed.to_string());
@@ -752,15 +779,16 @@ pub fn board(game_props: &GameProps) -> Html {
                 action={score_board_callback.clone()}
             />
             if state.gamestate.over {
-                <ShareGameButtons score={state.hiscore} seed={state.history.seed} />
+
+                <ShareGameButtons score={state.hiscore} seed={state.history.seed} emoji_board={emoji_board(flatten_tiles.iter().map(|tile| tile.value).collect::<Vec<_>>())}/>
             }
             // Game board
             <div
                 ref={board_ref}
                 id="game-board"
-                class="flex-1 mx-auto md:p-4 p-4 w-90 md:w-1/2 lg:w-1/2 xl:w-120 bg-light-board-background shadow-2xl rounded-md md:mt-4 xs:mt-1 mt-2"
+                class="flex-1 mx-auto md:p-4 p-4 w-90 md:w-3/4 lg:w-1/2 xl:w-140 bg-light-board-background shadow-2xl rounded-md md:mt-4 xs:mt-1 mt-2"
             >
-                <div class="aspect-square p-2 flex flex-col  rounded-md w-full  relative ">
+                <div class="aspect-square p-2 flex flex-col rounded-md w-full  relative ">
                     <div className="flex flex-col p-2 relative w-full h-full">
                         //Place holder grids
                         { (0..total_tiles).map(|i| {
