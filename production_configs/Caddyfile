@@ -4,6 +4,6 @@
         file_server
     }
     handle /api/* {
-        reverse_proxy at_2048.railway.internal
+        reverse_proxy api-2048.railway.internal
     }
 }
