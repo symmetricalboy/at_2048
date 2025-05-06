@@ -19,19 +19,40 @@ gh repo clone fatfingers23/at_2048
 https://github.com/fatfingers23/at_2048.git
 ```
 
+Now, you have two choices:
+
+- [Set up with Nix](#setup-with-nix)
+- [Manual dependency installation](#manual-dependency-installation)
+
+### Setup with Nix
+
+- Install [Determinate Nix](https://github.com/DeterminateSystems/nix-installer) (skip if you are on NixOS with [flakes](https://nixos.wiki/wiki/Flakes) enabled)
+- `cd at_2048`
+- `direnv allow`
+- Make a cup of tea while dependencies are being downloaded
+- Once it's done, (dependencies loading, not tea) `cd app_2048`
+- `npm install`
+
+After that, it might be a good idea to run `nix flake update` and see if
+`flake.lock` file at the project root directory is changed. This way, you'll
+ensure you have the latest packages installed.
+
+### Manual dependency installation
+
 - [Install Rust](https://www.rust-lang.org/tools/install), if you haven't already
 - Add Wasm target: `rustup target add wasm32-unknown-unknown`
 - [Install npm](https://nodejs.org/en/download)
 - Install project dependencies using `npm` and `cargo`:
 ```bash
 cargo install trunk wasm-bindgen-cli
-npm install tailwindcss daisyui
 ```
 - Go to the `app_2048` directory: `cd at_2048/app_2048`
-- Run `trunk serve`
+- Run `npm install`
 
-Now, wait for the rest of dependencies to load, compile, and build, and once
-it's done, you'll see something like this in your terminal:
+### Running the project
+
+Open the `app_2048` directory and run `trunk serve`. You should see something
+like this:
 
 ```
 Done in 151ms
@@ -57,3 +78,18 @@ git push github <YOUR_BRANCH_NAME>
 ```
 After that, come back to this repository and GitHub will propose you to open
 the pull request. Do it!
+
+## How do I update the project files? I want to have the latest codebase!
+
+```bash
+git checkout main
+git pull
+```
+
+Boom! Your codebase is now straight from the oven again.
+
+## I have unanswered questions. Where can I ask them?
+
+Feel free to DM or @ me on [Bluesky](https://bsky.app/profile/2048.blue), or
+open a new issue if you encountered a problem.
+
