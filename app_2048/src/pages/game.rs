@@ -112,8 +112,9 @@ impl Reducible for State {
 
 impl State {
     pub fn new() -> Self {
-        let random_seed = rand::random();
-        let history = SeededRecording::empty(random_seed, 4, 4);
+        // let random_seed = rand::random();
+        // let history = SeededRecording::empty(random_seed, 4, 4);
+        let history = String::from("::2:4:4:1827348045:LSsRATMaBRA3LwAqJSMfHxwPKCk4EBYTBQwqFREBLxgPPw8mCQIPABo3MiMJOR0sLCoCPQUDJAQpARgIFTM0FSM6NBISJSErKjwSGgEhGSQrEiwjKC02GwEGPykiPAs+Ii4qNRgHJBcALC4FISs4Jh4zLjc8KTMpAzovPAYGHj8ZKCQCMBk1HSgTMigiDAE6Ax4GCz8sAjcRLBsLCA41KDMGDjgAKwsPJw0TCRIDFjEMDRY4JRE5OSckPiQmJAQ0KiI2GSQYEDQxHhwcBRkTOS05Ci8WESQ9KiAnEBY3MAweBD4KFS4OAisbOjEDIjcJGTAuAjo0JDQIOQ03MRALCQkPHAIZIB4fJDIiGTAROhEAKyQzFhs5PCc0JQoRGi8JFjkoBwUIHDQCFi8EBAITEg0lMzUhJBU+PhYFNDEtLxUGLi4nGw0DCi4jLigYAx4wATMbOgsWFAYSDgYIKRYhCTo4ACwUABwLMB8pBC0hNSI3MAEhHT0UGAwnAgcpBQklFhQtCgMAHyoNHiIAKzMOGCIZDAsuID0fAysXNx87PhQAIRcdDTMBJAwTIS89LzwrFwkNMQYZBygLMAMc").parse::<SeededRecording>().unwrap();
         let gamestate = GameState::from_reconstructable_ruleset(&history).unwrap();
         Self {
             gamestate,
@@ -452,7 +453,7 @@ pub fn scoreboard(props: &ScoreboardProps) -> Html {
                 </div>
             </div>
             <div class="text-center md:mt-4 mt-2">
-                <p>{ message }</p>
+                <h2 class="text-lg">{ message }</h2>
             </div>
         </>
     }
@@ -486,7 +487,7 @@ fn emoji_board(tile_values: Vec<usize>) -> String {
 struct ShareButtonProps {
     score: usize,
     seed: u32,
-    emoji_board: String,
+    // emoji_board: String,
 }
 
 #[function_component(ShareGameButtons)]
@@ -497,9 +498,8 @@ fn bsky_buttons(props: &ShareButtonProps) -> Html {
         .expect("Could not build the number formatter.");
     let score = number_formatter.fmt2(props.score).to_string();
     let normal_share_display_text = format!(
-        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.\n\n{}",
-        score.clone(),
-        { props.emoji_board.clone() }
+        "I just scored {} on a game of at://2048.\nThink you can do better? Join in on the fun with @2048.blue.",
+        score.clone()
     );
 
     let seed_redirect_url = format!("https://2048.blue/seed/{}", props.seed.to_string());
@@ -779,8 +779,8 @@ pub fn board(game_props: &GameProps) -> Html {
                 action={score_board_callback.clone()}
             />
             if state.gamestate.over {
-
-                <ShareGameButtons score={state.hiscore} seed={state.history.seed} emoji_board={emoji_board(flatten_tiles.iter().map(|tile| tile.value).collect::<Vec<_>>())}/>
+                // <ShareGameButtons score={state.hiscore} seed={state.history.seed} emoji_board={emoji_board(flatten_tiles.iter().map(|tile| tile.value).collect::<Vec<_>>())}/>
+                <ShareGameButtons score={state.hiscore} seed={state.history.seed}/>
             }
             // Game board
             <div
