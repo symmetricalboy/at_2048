@@ -9,24 +9,40 @@ need to get this project up and running.
 - Clone this project using your preferred tools:
 
 ```bash
+# Regular git clone
+git clone https://github.com/fatfingers23/at_2048.git
+
 # Clone using SSH (the most secure way)
 git clone git@github.com:fatfingers23/at_2048.git
 
 # Clone using GitHub CLI (the most convenient way)
 gh repo clone fatfingers23/at_2048
 
-# Clone using HTTPS
-https://github.com/fatfingers23/at_2048.git
 ```
 
 Now, you have two choices:
 
-- [Set up with Nix](#setup-with-nix)
-- [Manual dependency installation](#manual-dependency-installation)
+- [Setup](#setup)
+- [Set up with Nix](#setup-with-nix-optional)
 
-### Setup with Nix
+### Setup
 
-- Install [Determinate Nix](https://github.com/DeterminateSystems/nix-installer) (skip if you are on NixOS with [flakes](https://nixos.wiki/wiki/Flakes) enabled)
+- [Install Rust](https://www.rust-lang.org/tools/install), if you haven't already
+- Add Wasm target: `rustup target add wasm32-unknown-unknown`
+- [Install npm](https://nodejs.org/en/download)
+- Install project dependencies using `npm` and `cargo`:
+
+```bash
+cargo install trunk wasm-bindgen-cli
+```
+
+- Go to the `app_2048` directory: `cd at_2048/app_2048`
+- Run `npm install`
+
+### Setup with Nix (Optional)
+
+- Install [Determinate Nix](https://github.com/DeterminateSystems/nix-installer) (skip if you are on NixOS
+  with [flakes](https://nixos.wiki/wiki/Flakes) enabled)
 - `cd at_2048`
 - `direnv allow`
 - Make a cup of tea while dependencies are being downloaded
@@ -36,18 +52,6 @@ Now, you have two choices:
 After that, it might be a good idea to run `nix flake update` and see if
 `flake.lock` file at the project root directory is changed. This way, you'll
 ensure you have the latest packages installed.
-
-### Manual dependency installation
-
-- [Install Rust](https://www.rust-lang.org/tools/install), if you haven't already
-- Add Wasm target: `rustup target add wasm32-unknown-unknown`
-- [Install npm](https://nodejs.org/en/download)
-- Install project dependencies using `npm` and `cargo`:
-```bash
-cargo install trunk wasm-bindgen-cli
-```
-- Go to the `app_2048` directory: `cd at_2048/app_2048`
-- Run `npm install`
 
 ### Running the project
 
@@ -70,12 +74,15 @@ hacking!
 
 ## I've done something cool and would like to share. How can I?
 
-Go to this repository's page, [fork it](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo?tool=webui&platform=linux#forking-a-repository),
+Go to this repository's
+page, [fork it](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo?tool=webui&platform=linux#forking-a-repository),
 save your changes using `git commit`, then push it:
+
 ```bash
 git remote add github git@github.com:<YOUR_USERNAME>/at_2048.git # only needed once
 git push github <YOUR_BRANCH_NAME>
 ```
+
 After that, come back to this repository and GitHub will propose you to open
 the pull request. Do it!
 
