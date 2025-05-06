@@ -3,7 +3,7 @@
 Heavily WIP, almost zero documentation or setup. Focusing on new features right now.
 Read at your own risk.
 
-Contribution guidelines: [CONTRIBUTING.md](CONTRIBUTING.md)
+Contribution guidelines and how to setup the project: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Special thanks to these because there would be no at://2048 without them
 

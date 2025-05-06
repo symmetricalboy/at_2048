@@ -1,6 +1,9 @@
 lint:
     yew-fmt ./app_2048/src/*.rs
 
+release-build:
+    APP_ORIGIN=https://2048.blue trunk build --config ./app_2048/Trunk.toml --release
+
 release:
     #trunk build --config ./app_2048/Trunk.toml --release
     docker buildx build \

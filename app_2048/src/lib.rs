@@ -6,6 +6,7 @@ use crate::oauth_client::oauth_client;
 use crate::pages::callback::CallbackPage;
 use crate::pages::game::GamePage;
 use crate::pages::login::LoginPage;
+use crate::pages::seed::SeedPage;
 use crate::pages::stats::StatsPage;
 use crate::store::UserStore;
 use atrium_api::agent::Agent;
@@ -40,6 +41,10 @@ enum Route {
     CallbackPage,
     #[at("/stats")]
     StatsPage,
+    #[at("/seed/:seed")]
+    SeedPage { seed: u32 },
+    #[at("/seed")]
+    SeedPageNoSeed,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -51,6 +56,8 @@ fn switch(routes: Route) -> Html {
         Route::LoginPage => html! { <LoginPage /> },
         Route::CallbackPage => html! { <CallbackPage /> },
         Route::StatsPage => html! { <StatsPage /> },
+        Route::SeedPage { seed } => html! { <SeedPage starting_seed={seed} /> },
+        Route::SeedPageNoSeed => html! { <SeedPage starting_seed={None} /> },
         Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }
