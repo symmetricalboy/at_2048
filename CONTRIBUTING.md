@@ -21,8 +21,8 @@ https://github.com/fatfingers23/at_2048.git
 
 Now, you have two choices:
 
-- [Easy way with Nix](#setup-with-nix)
-- Potentially bumpy ride with [manual dependency installation](#manual-dependency-installation)
+- [Set up with Nix](#setup-with-nix)
+- [Manual dependency installation](#manual-dependency-installation)
 
 ### Setup with Nix
 
@@ -45,7 +45,6 @@ ensure you have the latest packages installed.
 - Install project dependencies using `npm` and `cargo`:
 ```bash
 cargo install trunk wasm-bindgen-cli
-npm install tailwindcss daisyui
 ```
 - Go to the `app_2048` directory: `cd at_2048/app_2048`
 - Run `npm install`
